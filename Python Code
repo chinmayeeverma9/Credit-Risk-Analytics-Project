@@ -1,0 +1,66 @@
+import pandas as pd
+import numpy as np
+
+data = pd.read_csv('Data/credit_data.csv')
+data.fillna(method='ffill', inplace=True)
+
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+sns.countplot(x='default', data=data)
+plt.show()
+
+
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+
+label_encoder = LabelEncoder()
+data['category'] = label_encoder.fit_transform(data['category'])
+
+scaler = StandardScaler()
+features = data.drop('default', axis=1)
+features_scaled = scaler.fit_transform(features)
+
+
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+
+X_train, X_test, y_train, y_test = train_test_split(features_scaled, data['default'], test_size=0.3, random_state=42)
+
+lr_model = LogisticRegression()
+lr_model.fit(X_train, y_train)
+
+dt_model = DecisionTreeClassifier()
+dt_model.fit(X_train, y_train)
+
+
+from sklearn.metrics import roc_curve, auc
+
+lr_probs = lr_model.predict_proba(X_test)[:, 1]
+dt_probs = dt_model.predict_proba(X_test)[:, 1]
+
+lr_fpr, lr_tpr, _ = roc_curve(y_test, lr_probs)
+dt_fpr, dt_tpr, _ = roc_curve(y_test, dt_probs)
+
+plt.plot(lr_fpr, lr_tpr, marker='.', label='Logistic Regression')
+plt.plot(dt_fpr, dt_tpr, marker='.', label='Decision Tree')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.legend()
+plt.show()
+
+
+import pickle
+
+with open('OutPutModel/lr_model.pkl', 'wb') as file:
+    pickle.dump(lr_model, file)
+
+with open('OutPutModel/lr_model.pkl', 'rb') as file:
+    loaded_model = pickle.load(file)
+
+
+
+
+
